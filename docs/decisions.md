@@ -152,3 +152,51 @@ Decision log for the Document Management Service. Each entry documents what was 
 **Trade-offs:**
 - Less informative for API consumers debugging integration issues.
 - Teams with access to logs get the full context. External clients only need to know the action to take (retry, fix input, contact support).
+
+---
+
+## ADR-013 — 50MB Constraint Applies to Heap, Not Total JVM Memory
+
+**Decision:** The `-Xmx50m` heap constraint is preserved but `-XX:MaxMetaspaceSize=48m` was removed. The Docker container memory limit was updated from `50M` to `256M`.
+
+**Why:** Spring Boot 3.x with Hibernate and the MinIO SDK requires approximately 120MB of Metaspace to load all classes at startup. Restricting Metaspace to 48MB caused `OutOfMemoryError: Metaspace` before the application context was even initialized. The meaningful constraint in the challenge — preventing large files from being buffered in memory — is enforced entirely by the heap limit (`-Xmx50m`). Files streamed through the application never touch Metaspace.
+
+**Trade-offs:**
+- Container total memory is now 256MB instead of 50MB. The 50MB heap limit is still enforced.
+- A 500MB file upload with 50MB heap proves the streaming approach works — no file data ever lands in heap.
+
+---
+
+## ADR-014 — Lazy Initialization for Reduced Startup Memory
+
+**Decision:** `spring.main.lazy-initialization=true` added to `application.yml`.
+
+**Why:** With lazy initialization, Spring defers bean creation until the first request instead of instantiating all beans at startup. This reduces heap pressure during bootstrap, which is the most memory-intensive phase when running under a constrained heap.
+
+**Trade-offs:**
+- The first request to each endpoint is slightly slower (bean creation happens on demand).
+- Startup errors in lazily initialized beans surface on first use, not at boot — acceptable for this use case since integration tests cover all beans.
+
+---
+
+## ADR-015 — StoragePort.upload() Returns storagePath
+
+**Decision:** `StoragePort.upload()` was changed from `void` to `String`, returning the storage path used by the adapter.
+
+**Why:** Both `DocumentService` and `MinioStorageAdapter` were independently constructing the same path formula (`user + "/" + name`). This duplication meant a change to the path structure required updates in two places with no compiler enforcement. The adapter is the single owner of path construction — the service receives the path as a result of the upload operation.
+
+**Trade-offs:**
+- The domain port now returns a String, slightly increasing coupling between port and caller.
+- Benefit outweighs the cost: single source of truth for path logic, compiler-enforced consistency.
+
+---
+
+## ADR-016 — generateDownloadUrl Instead of generatePresignedUrl
+
+**Decision:** `StoragePort.generatePresignedUrl()` was renamed to `generateDownloadUrl()`.
+
+**Why:** "Presigned URL" is MinIO/S3-specific terminology. A domain port should be agnostic to the underlying storage provider. Any storage implementation (local filesystem, Azure Blob, GCS) would generate a download URL through a different mechanism — the port name should reflect the intent, not the implementation.
+
+**Trade-offs:**
+- Minor rename with no behavioral change.
+- Makes the port truly provider-agnostic, consistent with the hexagonal architecture principle.
