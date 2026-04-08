@@ -3,7 +3,7 @@ package com.clara.ops.challenge.document_management_service_challenge.domain.mod
 import java.io.InputStream;
 import java.util.List;
 
-public record DocumentUploadCommand(
+public record DocumentUpload(
     String user,
     String name,
     List<String> tags,
