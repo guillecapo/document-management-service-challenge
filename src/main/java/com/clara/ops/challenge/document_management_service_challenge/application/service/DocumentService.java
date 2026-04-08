@@ -26,9 +26,7 @@ public class DocumentService
   @Override
   public Document upload(DocumentUpload upload) {
     String id = UlidCreator.getMonotonicUlid().toString();
-    String storagePath = upload.user() + "/" + upload.name();
-
-    storagePort.upload(upload);
+    String storagePath = storagePort.upload(upload);
 
     Document document =
         new Document(
@@ -56,6 +54,6 @@ public class DocumentService
             .findById(documentId)
             .orElseThrow(() -> new DocumentNotFoundException(documentId));
 
-    return storagePort.generatePresignedUrl(document.storagePath());
+    return storagePort.generateDownloadUrl(document.storagePath());
   }
 }

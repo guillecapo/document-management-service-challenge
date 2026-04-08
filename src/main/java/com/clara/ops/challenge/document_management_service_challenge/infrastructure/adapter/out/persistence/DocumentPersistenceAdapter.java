@@ -21,6 +21,8 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class DocumentPersistenceAdapter implements DocumentRepository {
 
+  private static final String CREATED_AT_FIELD = "createdAt";
+
   private final DocumentJpaRepository jpaRepository;
 
   @Override
@@ -39,7 +41,7 @@ public class DocumentPersistenceAdapter implements DocumentRepository {
   @Override
   @Transactional(readOnly = true)
   public PagedResult<Document> findByCriteria(DocumentSearchCriteria criteria, int page, int size) {
-    Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+    Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, CREATED_AT_FIELD));
     Page<DocumentJpaEntity> result =
         jpaRepository.findAll(DocumentSpecification.withCriteria(criteria), pageable);
 

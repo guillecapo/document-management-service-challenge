@@ -23,7 +23,7 @@ public class MinioStorageAdapter implements StoragePort {
   private final MinioProperties properties;
 
   @Override
-  public void upload(DocumentUpload upload) {
+  public String upload(DocumentUpload upload) {
     String storagePath = upload.user() + "/" + upload.name();
     try {
       minioClient.putObject(
@@ -33,13 +33,14 @@ public class MinioStorageAdapter implements StoragePort {
               .stream(upload.fileStream(), upload.fileSize(), -1)
               .contentType(upload.fileType())
               .build());
+      return storagePath;
     } catch (Exception e) {
-      throwStorageException("Failed to upload document to storage: " + storagePath, e);
+      throw buildStorageException("Failed to upload document to storage: " + storagePath, e);
     }
   }
 
   @Override
-  public String generatePresignedUrl(String storagePath) {
+  public String generateDownloadUrl(String storagePath) {
     try {
       return minioClient.getPresignedObjectUrl(
           GetPresignedObjectUrlArgs.builder()
@@ -49,16 +50,15 @@ public class MinioStorageAdapter implements StoragePort {
               .expiry(properties.presignedUrlExpiryMinutes(), TimeUnit.MINUTES)
               .build());
     } catch (Exception e) {
-      throwStorageException("Failed to generate presigned URL for: " + storagePath, e);
-      return null; // unreachable, but required by the compiler
+      throw buildStorageException("Failed to generate download URL for: " + storagePath, e);
     }
   }
 
-  private void throwStorageException(String message, Exception e) {
+  private RuntimeException buildStorageException(String message, Exception e) {
     Throwable cause = e.getCause() != null ? e.getCause() : e;
     if (cause instanceof ConnectException || cause instanceof SocketException) {
-      throw new DependencyUnavailableException("MinIO", e);
+      return new DependencyUnavailableException("MinIO", e);
     }
-    throw new StorageException(message, e);
+    return new StorageException(message, e);
   }
 }

@@ -4,7 +4,7 @@ import com.clara.ops.challenge.document_management_service_challenge.domain.mode
 
 public interface StoragePort {
 
-  void upload(DocumentUpload upload);
+  String upload(DocumentUpload upload);
 
-  String generatePresignedUrl(String storagePath);
+  String generateDownloadUrl(String storagePath);
 }
