@@ -2,21 +2,21 @@ server:
   port: ${SERVER_PORT:8080}
 
 spring:
+  main:
+    lazy-initialization: true
   datasource:
     url: ${DB_URL:jdbc:postgresql://localhost:5432/challenge}
     username: ${DB_USERNAME:postgres}
     password: ${DB_PASSWORD:postgres}
     driver-class-name: org.postgresql.Driver
-
   jpa:
     hibernate:
       ddl-auto: validate
+    open-in-view: false
     properties:
       hibernate:
         default_schema: document_schema
-        dialect: org.hibernate.dialect.PostgreSQLDialect
     show-sql: false
-
   servlet:
     multipart:
       enabled: true

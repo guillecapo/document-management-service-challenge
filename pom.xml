@@ -30,7 +30,7 @@
 		<springdoc.version>2.7.0</springdoc.version>
 		<testcontainers.version>1.20.4</testcontainers.version>
 
-		<jvm.run.args>-Xmx50m -Xms32m -XX:+UseSerialGC -XX:MaxMetaspaceSize=48m -Xss256k</jvm.run.args>
+		<jvm.run.args>-Xmx50m -Xms32m -XX:+UseSerialGC -Xss256k</jvm.run.args>
 	</properties>
 	<dependencyManagement>
 		<dependencies>
