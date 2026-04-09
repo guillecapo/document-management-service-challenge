@@ -1,0 +1,223 @@
+{
+  "info": {
+    "name": "Document Management Service",
+    "description": "Collection for testing the Document Management Service API.\n\nBase URL is controlled by the `baseUrl` variable (default: http://localhost:8080).\nAfter a successful upload, copy the document ID from the search response and set it in the `documentId` variable to test the download endpoint.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "documentId",
+      "value": "",
+      "type": "string",
+      "description": "Set this after uploading a document. Copy the id from the search response."
+    }
+  ],
+  "item": [
+    {
+      "name": "Upload Document",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/document-management/upload",
+          "host": ["{{baseUrl}}"],
+          "path": ["document-management", "upload"]
+        },
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "metadata",
+              "value": "{\"user\": \"john.doe\", \"name\": \"sample-document.pdf\", \"tags\": [\"finance\", \"q1-2026\"]}",
+              "description": "Document metadata as JSON. All fields are required: user (string), name (string), tags (non-empty array).",
+              "type": "text",
+              "contentType": "application/json"
+            },
+            {
+              "key": "file",
+              "description": "PDF file to upload. Maximum size: 500MB.",
+              "type": "file",
+              "src": []
+            }
+          ]
+        },
+        "description": "Uploads a PDF file along with its metadata.\n\n**metadata part** must be sent as `application/json` content type.\n**file part** must be a PDF file.\n\nReturns HTTP 201 on success with no body."
+      },
+      "response": [
+        {
+          "name": "201 Created",
+          "status": "Created",
+          "code": 201,
+          "header": [],
+          "body": "",
+          "originalRequest": {
+            "method": "POST",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "metadata",
+                  "value": "{\"user\": \"john.doe\", \"name\": \"sample-document.pdf\", \"tags\": [\"finance\", \"q1-2026\"]}",
+                  "type": "text",
+                  "contentType": "application/json"
+                },
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "400 Validation Error",
+          "status": "Bad Request",
+          "code": 400,
+          "header": [{"key": "Content-Type", "value": "application/json"}],
+          "body": "{\"error\": \"user: must not be blank\"}",
+          "originalRequest": {
+            "method": "POST",
+            "body": {
+              "mode": "formdata",
+              "formdata": []
+            }
+          }
+        },
+        {
+          "name": "422 File Too Large",
+          "status": "Unprocessable Entity",
+          "code": 422,
+          "header": [{"key": "Content-Type", "value": "application/json"}],
+          "body": "{\"error\": \"File size exceeds the maximum allowed limit of 500MB.\"}",
+          "originalRequest": {
+            "method": "POST",
+            "body": {
+              "mode": "formdata",
+              "formdata": []
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Search Documents",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/document-management/search?page=0&size=20",
+          "host": ["{{baseUrl}}"],
+          "path": ["document-management", "search"],
+          "query": [
+            {
+              "key": "page",
+              "value": "0",
+              "description": "Zero-based page index."
+            },
+            {
+              "key": "size",
+              "value": "20",
+              "description": "Number of items per page."
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"user\": \"john.doe\",\n  \"name\": \"sample\",\n  \"tags\": [\"finance\"]\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "description": "Searches documents with optional filters. All filter fields are optional — send an empty body `{}` to return all documents.\n\n- `user`: exact match\n- `name`: case-insensitive substring match\n- `tags`: OR logic (returns documents matching at least one tag)\n\nResults are sorted by `created_at` descending."
+      },
+      "response": [
+        {
+          "name": "200 OK - With Results",
+          "status": "OK",
+          "code": 200,
+          "header": [{"key": "Content-Type", "value": "application/json"}],
+          "body": "{\n  \"metadata\": {\n    \"currentPage\": 0,\n    \"itemsPerPage\": 20,\n    \"currentItems\": 1,\n    \"totalPages\": 1,\n    \"totalItems\": 1\n  },\n  \"documents\": [\n    {\n      \"id\": \"01JRTK2F3G4H5J6K7L8M9N0P\",\n      \"user\": \"john.doe\",\n      \"name\": \"sample-document.pdf\",\n      \"tags\": [\"finance\", \"q1-2026\"],\n      \"size\": 204800,\n      \"type\": \"application/pdf\",\n      \"createdAt\": \"2026-04-08T13:51:00\"\n    }\n  ]\n}",
+          "originalRequest": {
+            "method": "POST",
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            }
+          }
+        },
+        {
+          "name": "200 OK - No Filters",
+          "status": "OK",
+          "code": 200,
+          "header": [{"key": "Content-Type", "value": "application/json"}],
+          "body": "{\n  \"metadata\": {\n    \"currentPage\": 0,\n    \"itemsPerPage\": 20,\n    \"currentItems\": 0,\n    \"totalPages\": 0,\n    \"totalItems\": 0\n  },\n  \"documents\": []\n}",
+          "originalRequest": {
+            "method": "POST",
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Download Document",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/document-management/download/{{documentId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["document-management", "download", "{{documentId}}"]
+        },
+        "description": "Returns a presigned MinIO URL to download the document. The URL expires after the configured TTL (default: 60 minutes).\n\nSet the `documentId` collection variable with a valid document ID obtained from the search response."
+      },
+      "response": [
+        {
+          "name": "200 OK",
+          "status": "OK",
+          "code": 200,
+          "header": [{"key": "Content-Type", "value": "application/json"}],
+          "body": "{\n  \"url\": \"http://localhost:9000/document-bucket/john.doe/sample-document.pdf?X-Amz-Algorithm=AWS4-HMAC-SHA256&...\"\n}",
+          "originalRequest": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/document-management/download/01JRTK2F3G4H5J6K7L8M9N0P",
+              "host": ["{{baseUrl}}"],
+              "path": ["document-management", "download", "01JRTK2F3G4H5J6K7L8M9N0P"]
+            }
+          }
+        },
+        {
+          "name": "404 Not Found",
+          "status": "Not Found",
+          "code": 404,
+          "header": [{"key": "Content-Type", "value": "application/json"}],
+          "body": "{\"error\": \"Document not found with id: 01JRTK2F3G4H5J6K7L8M9N0P\"}",
+          "originalRequest": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/document-management/download/invalid-id",
+              "host": ["{{baseUrl}}"],
+              "path": ["document-management", "download", "invalid-id"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
