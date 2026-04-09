@@ -12,28 +12,68 @@ services:
     environment:
       - POSTGRES_DB=challenge
       - POSTGRES_PASSWORD=${POSTGRESQL_POSTGRES_PASSWORD}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d challenge"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
   minio:
     image: minio/minio:latest
     container_name: minio
     restart: always
     ports:
-      - "9000:9000"  # API S3
-      - "9001:9001"  # MinIO Web Console
+      - "9000:9000"  # S3 API
+      - "9001:9001"  # Web Console
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
     command: server --console-address ":9001" /data
     volumes:
       - challenge_minio_data:/data
-  # Include all the necessary settings to include a document management service in the stack
-  # Remember to configure this service to limit the memory to 50MB
-  # document-management-service:
-  #    environment:
-  #      - JAVA_OPTS=-Xmx50m -Xms32m -XX:+UseSerialGC -Xss256k
-  #    deploy:
-  #      resources:
-  #        limits:
-  #          memory: 256M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  document-management-service:
+    build:
+      # Build context is the project root so the Dockerfile can access src/ and pom.xml.
+      context: ..
+      dockerfile: Dockerfile
+    container_name: document_management_service
+    restart: on-failure
+    ports:
+      - "8080:8080"
+    environment:
+      - SERVER_PORT=8080
+      - DB_URL=jdbc:postgresql://postgresql_container:5432/challenge
+      - DB_USERNAME=postgres
+      - DB_PASSWORD=${POSTGRESQL_POSTGRES_PASSWORD}
+      - MINIO_ENDPOINT=http://minio:9000
+      - MINIO_ACCESS_KEY=${MINIO_ROOT_USER}
+      - MINIO_SECRET_KEY=${MINIO_ROOT_PASSWORD}
+      - MINIO_BUCKET_NAME=document-bucket
+      # Override the default JAVA_OPTS baked into the image.
+      # -Xmx50m enforces the 50 MB heap budget required by the challenge.
+      # Docker also enforces a hard 256 MB container memory limit below.
+      - JAVA_OPTS=-Xmx50m -Xms32m -XX:+UseSerialGC -Xss256k
+    deploy:
+      resources:
+        limits:
+          # Container-level hard cap. The JVM heap is 50 MB; the remaining
+          # ~200 MB covers the JVM itself (metaspace, code cache, off-heap).
+          memory: 256M
+    depends_on:
+      postgresql:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    networks:
+      - batch_network
 
 volumes:
   challenge_postgresql_data:
