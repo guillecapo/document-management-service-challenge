@@ -156,10 +156,10 @@ class ConcurrentUploadIntegrationTest {
 
     long heapBefore = heapUsed(memoryMxBean);
     log.info("=================================================================");
-    log.info("=== CONCURRENT UPLOAD TEST — START                           ===");
+    log.info("=== CONCURRENT UPLOAD TEST - START                           ===");
     log.info("=================================================================");
     log.info(
-        "Config  : {} threads × {} MB/file  =  {} MB total throughput",
+        "Config  : {} threads x {} MB/file  =  {} MB total throughput",
         THREAD_COUNT,
         FILE_SIZE_BYTES / (1024 * 1024),
         THREAD_COUNT * FILE_SIZE_BYTES / (1024 * 1024));
@@ -285,7 +285,7 @@ class ConcurrentUploadIntegrationTest {
     log.info("  MinIO SDK part size : ~5 MB  -> OkHttp reads one part per thread");
     log.info("  Expected if buffered: delta ~{} MB  [NOT observed]", totalDataMb);
     log.info("  Conclusion: upload pipeline streams in chunks; it does NOT");
-    log.info("              buffer full files — consistent with -Xmx50m safety.");
+    log.info("              buffer full files -- consistent with -Xmx50m safety.");
     log.info("-----------------------------------------------------------------");
     log.info("--- HOW THE 50 MB PRODUCTION CONSTRAINT IS ENFORCED          ---");
     log.info("-----------------------------------------------------------------");
@@ -295,7 +295,7 @@ class ConcurrentUploadIntegrationTest {
     log.info("  The streaming architecture confirmed here ensures no 60 MB");
     log.info("  payload is ever fully buffered inside that 50 MB budget.");
     log.info("=================================================================");
-    log.info("=== CONCURRENT UPLOAD TEST — END                             ===");
+    log.info("=== CONCURRENT UPLOAD TEST - END                             ===");
     log.info("=================================================================");
 
     // ---- Assertions ---------------------------------------------------------------------------
