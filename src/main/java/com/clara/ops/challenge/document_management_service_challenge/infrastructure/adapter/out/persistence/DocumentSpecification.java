@@ -30,7 +30,7 @@ public class DocumentSpecification {
       if (criteria.tags() != null && !criteria.tags().isEmpty()) {
         Join<DocumentJpaEntity, DocumentTagJpaEntity> tagsJoin = root.join("tags", JoinType.INNER);
         predicates.add(tagsJoin.get("tag").in(criteria.tags()));
-        if (query != null && !Long.class.equals(query.getResultType())) {
+        if (!Long.class.equals(query.getResultType())) {
           query.distinct(true);
         }
       }
