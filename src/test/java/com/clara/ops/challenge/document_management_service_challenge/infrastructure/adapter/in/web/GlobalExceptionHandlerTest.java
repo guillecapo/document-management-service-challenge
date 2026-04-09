@@ -12,6 +12,7 @@ import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -24,10 +25,10 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.multipart.MultipartException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
@@ -55,7 +56,12 @@ class GlobalExceptionHandlerTest {
   // Domain exceptions
   // ---------------------------------------------------------------------------
 
+  /**
+   * DocumentNotFoundException carries the document ID in its message. The handler must forward
+   * that message to the client so the caller knows which resource was not found.
+   */
   @Test
+  @DisplayName("DocumentNotFoundException returns 404 with exception message")
   void handleNotFound_returns404WithExceptionMessage() throws Exception {
     mockMvc
         .perform(get("/throw/not-found"))
@@ -63,7 +69,12 @@ class GlobalExceptionHandlerTest {
         .andExpect(jsonPath("$.error").value("Document not found with id: doc-123"));
   }
 
+  /**
+   * DependencyUnavailableException signals that an external service (MinIO, database) is down.
+   * The response uses a fixed, generic message to avoid leaking infrastructure details.
+   */
   @Test
+  @DisplayName("DependencyUnavailableException returns 503 with fixed message")
   void handleDependencyUnavailable_returns503WithFixedMessage() throws Exception {
     mockMvc
         .perform(get("/throw/dependency-unavailable"))
@@ -79,9 +90,11 @@ class GlobalExceptionHandlerTest {
 
   /**
    * DataAccessException signals that the database is unreachable or unusable. The handler treats
-   * this the same as DependencyUnavailableException so the caller gets a consistent 503.
+   * this the same as DependencyUnavailableException so the caller gets a consistent 503 regardless
+   * of whether the failing dependency is the database or another service.
    */
   @Test
+  @DisplayName("DataAccessException returns 503 with fixed message")
   void handleDataAccess_returns503WithFixedMessage() throws Exception {
     mockMvc
         .perform(get("/throw/data-access"))
@@ -91,7 +104,12 @@ class GlobalExceptionHandlerTest {
                 .value("A required service is currently unavailable. Please try again later."));
   }
 
+  /**
+   * StorageException represents a MinIO operation failure that is not a connectivity issue.
+   * Returns 500 with a fixed message to avoid exposing storage internals.
+   */
   @Test
+  @DisplayName("StorageException returns 500 with fixed message")
   void handleStorage_returns500WithFixedMessage() throws Exception {
     mockMvc
         .perform(get("/throw/storage"))
@@ -105,9 +123,11 @@ class GlobalExceptionHandlerTest {
 
   /**
    * MaxUploadSizeExceededException is a subtype of MultipartException. The more-specific handler
-   * must fire first and return 422 instead of 400.
+   * must fire first and return 422 instead of 400, signaling that the request was understood but
+   * the file size constraint was violated.
    */
   @Test
+  @DisplayName("MaxUploadSizeExceededException returns 422 with fixed message")
   void handleMaxUploadSize_returns422WithFixedMessage() throws Exception {
     mockMvc
         .perform(get("/throw/max-upload-size"))
@@ -116,7 +136,12 @@ class GlobalExceptionHandlerTest {
             jsonPath("$.error").value("File size exceeds the maximum allowed limit of 500MB."));
   }
 
+  /**
+   * A generic MultipartException (not caused by size) returns 400 including the exception message
+   * so the client understands what was malformed in the multipart request.
+   */
   @Test
+  @DisplayName("MultipartException returns 400 with exception message")
   void handleMultipart_returns400WithExceptionMessage() throws Exception {
     mockMvc
         .perform(get("/throw/multipart"))
@@ -128,7 +153,12 @@ class GlobalExceptionHandlerTest {
   // HTTP protocol exceptions
   // ---------------------------------------------------------------------------
 
+  /**
+   * HttpMediaTypeNotSupportedException occurs when the client sends a content type that the
+   * endpoint does not accept. The response includes the rejected content type for diagnostics.
+   */
   @Test
+  @DisplayName("HttpMediaTypeNotSupportedException returns 415 with content type in message")
   void handleMediaType_returns415WithContentType() throws Exception {
     mockMvc
         .perform(get("/throw/media-type"))
@@ -136,7 +166,12 @@ class GlobalExceptionHandlerTest {
         .andExpect(jsonPath("$.error").value("Unsupported media type: text/plain"));
   }
 
+  /**
+   * NoResourceFoundException is thrown by Spring when no handler mapping matches the request path.
+   * The response includes the path so the caller can identify the typo or missing route.
+   */
   @Test
+  @DisplayName("NoResourceFoundException returns 404 with resource path in message")
   void handleNoResource_returns404WithResourcePath() throws Exception {
     mockMvc
         .perform(get("/throw/no-resource"))
@@ -149,10 +184,12 @@ class GlobalExceptionHandlerTest {
   // ---------------------------------------------------------------------------
 
   /**
-   * The handler surfaces only the first field error so the client gets a single, actionable
-   * message rather than a raw Spring validation dump.
+   * MethodArgumentNotValidException is thrown by Spring when a request body fails @Valid
+   * constraints. The handler surfaces only the first field error so the client gets a single,
+   * actionable message rather than a raw Spring validation dump.
    */
   @Test
+  @DisplayName("MethodArgumentNotValidException returns 400 with first field error")
   void handleMethodArgNotValid_returns400WithFirstFieldError() throws Exception {
     mockMvc
         .perform(get("/throw/method-arg-not-valid"))
@@ -160,7 +197,12 @@ class GlobalExceptionHandlerTest {
         .andExpect(jsonPath("$.error").value("name: must not be blank"));
   }
 
+  /**
+   * ConstraintViolationException is thrown when a @Validated constraint fires outside a request
+   * body (e.g. path variables). The violation message is forwarded directly to the client.
+   */
   @Test
+  @DisplayName("ConstraintViolationException returns 400 with violation message")
   void handleConstraintViolation_returns400WithViolationMessage() throws Exception {
     mockMvc
         .perform(get("/throw/constraint-violation"))
@@ -172,7 +214,12 @@ class GlobalExceptionHandlerTest {
   // Catch-all
   // ---------------------------------------------------------------------------
 
+  /**
+   * Any unhandled exception falls through to the catch-all handler. A fixed, opaque message is
+   * returned to avoid leaking internal stack details to the client.
+   */
   @Test
+  @DisplayName("Unhandled exception returns 500 with fixed message")
   void handleGeneric_returns500WithFixedMessage() throws Exception {
     mockMvc
         .perform(get("/throw/generic"))
