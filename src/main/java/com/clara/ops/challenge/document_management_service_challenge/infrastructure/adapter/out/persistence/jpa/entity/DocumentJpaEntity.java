@@ -44,6 +44,10 @@ public class DocumentJpaEntity {
   @Column(name = "created_at", nullable = false)
   private LocalDateTime createdAt;
 
-  @OneToMany(mappedBy = "document", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+  @OneToMany(
+      mappedBy = "document",
+      cascade = CascadeType.ALL,
+      orphanRemoval = true,
+      fetch = FetchType.LAZY)
   private List<DocumentTagJpaEntity> tags;
 }

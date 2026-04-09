@@ -70,7 +70,8 @@ public class DocumentController {
                 schema =
                     @Schema(
                         example =
-                            "{\"error\": \"File size exceeds the maximum allowed limit of 500MB.\"}"))),
+                            "{\"error\": \"File size exceeds the maximum allowed limit of"
+                                + " 500MB.\"}"))),
     @ApiResponse(
         responseCode = "500",
         description = "Unexpected storage failure",
@@ -86,7 +87,10 @@ public class DocumentController {
         content =
             @Content(
                 schema =
-                    @Schema(example = "{\"error\": \"A required service is currently unavailable. Please try again later.\"}")))
+                    @Schema(
+                        example =
+                            "{\"error\": \"A required service is currently unavailable. Please try"
+                                + " again later.\"}")))
   })
   @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
   @ResponseStatus(HttpStatus.CREATED)
@@ -114,7 +118,8 @@ public class DocumentController {
   @Operation(
       summary = "Search documents",
       description =
-          "Returns a paginated list of documents filtered by user, name (partial match), and/or tags (OR logic). All filters are optional.")
+          "Returns a paginated list of documents filtered by user, name (partial match), and/or"
+              + " tags (OR logic). All filters are optional.")
   @ApiResponses({
     @ApiResponse(responseCode = "200", description = "Search results returned"),
     @ApiResponse(
@@ -127,7 +132,10 @@ public class DocumentController {
         content =
             @Content(
                 schema =
-                    @Schema(example = "{\"error\": \"A required service is currently unavailable. Please try again later.\"}")))
+                    @Schema(
+                        example =
+                            "{\"error\": \"A required service is currently unavailable. Please try"
+                                + " again later.\"}")))
   })
   @PostMapping("/search")
   public PaginatedDocumentResponse search(
@@ -151,7 +159,9 @@ public class DocumentController {
 
   @Operation(
       summary = "Get download URL",
-      description = "Returns a presigned MinIO URL to download the document. The URL expires after the configured TTL.")
+      description =
+          "Returns a presigned MinIO URL to download the document. The URL expires after the"
+              + " configured TTL.")
   @ApiResponses({
     @ApiResponse(responseCode = "200", description = "Presigned URL generated"),
     @ApiResponse(
@@ -159,8 +169,7 @@ public class DocumentController {
         description = "Document not found",
         content =
             @Content(
-                schema =
-                    @Schema(example = "{\"error\": \"Document not found with id: 01J...\"}"))),
+                schema = @Schema(example = "{\"error\": \"Document not found with id: 01J...\"}"))),
     @ApiResponse(
         responseCode = "500",
         description = "Unexpected failure generating the URL",
@@ -176,12 +185,14 @@ public class DocumentController {
         content =
             @Content(
                 schema =
-                    @Schema(example = "{\"error\": \"A required service is currently unavailable. Please try again later.\"}")))
+                    @Schema(
+                        example =
+                            "{\"error\": \"A required service is currently unavailable. Please try"
+                                + " again later.\"}")))
   })
   @GetMapping("/download/{documentId}")
   public DownloadUrlResponse download(
-      @Parameter(description = "ULID identifier of the document", required = true)
-          @PathVariable
+      @Parameter(description = "ULID identifier of the document", required = true) @PathVariable
           String documentId) {
     return new DownloadUrlResponse(downloadDocumentUseCase.generateDownloadUrl(documentId));
   }

@@ -27,10 +27,8 @@ public class MinioStorageAdapter implements StoragePort {
     String storagePath = upload.user() + "/" + upload.name();
     try {
       minioClient.putObject(
-          PutObjectArgs.builder()
-              .bucket(properties.bucketName())
-              .object(storagePath)
-              .stream(upload.fileStream(), upload.fileSize(), -1)
+          PutObjectArgs.builder().bucket(properties.bucketName()).object(storagePath).stream(
+                  upload.fileStream(), upload.fileSize(), -1)
               .contentType(upload.fileType())
               .build());
       return storagePath;

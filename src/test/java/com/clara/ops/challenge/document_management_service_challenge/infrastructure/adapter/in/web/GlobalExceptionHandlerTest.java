@@ -57,8 +57,8 @@ class GlobalExceptionHandlerTest {
   // ---------------------------------------------------------------------------
 
   /**
-   * DocumentNotFoundException carries the document ID in its message. The handler must forward
-   * that message to the client so the caller knows which resource was not found.
+   * DocumentNotFoundException carries the document ID in its message. The handler must forward that
+   * message to the client so the caller knows which resource was not found.
    */
   @Test
   @DisplayName("DocumentNotFoundException returns 404 with exception message")
@@ -70,8 +70,8 @@ class GlobalExceptionHandlerTest {
   }
 
   /**
-   * DependencyUnavailableException signals that an external service (MinIO, database) is down.
-   * The response uses a fixed, generic message to avoid leaking infrastructure details.
+   * DependencyUnavailableException signals that an external service (MinIO, database) is down. The
+   * response uses a fixed, generic message to avoid leaking infrastructure details.
    */
   @Test
   @DisplayName("DependencyUnavailableException returns 503 with fixed message")
@@ -105,8 +105,8 @@ class GlobalExceptionHandlerTest {
   }
 
   /**
-   * StorageException represents a MinIO operation failure that is not a connectivity issue.
-   * Returns 500 with a fixed message to avoid exposing storage internals.
+   * StorageException represents a MinIO operation failure that is not a connectivity issue. Returns
+   * 500 with a fixed message to avoid exposing storage internals.
    */
   @Test
   @DisplayName("StorageException returns 500 with fixed message")

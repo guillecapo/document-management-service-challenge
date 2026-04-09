@@ -37,7 +37,8 @@ class DocumentServiceTest {
 
   private static final String STORAGE_PATH = "john.doe/report.pdf";
   private static final String DOCUMENT_ID = "01KNQDVFDGY9ZRTRATYSZN0FSY";
-  private static final String DOWNLOAD_URL = "http://localhost:9000/document-bucket/john.doe/report.pdf?token=abc";
+  private static final String DOWNLOAD_URL =
+      "http://localhost:9000/document-bucket/john.doe/report.pdf?token=abc";
 
   @Mock private DocumentRepository documentRepository;
   @Mock private StoragePort storagePort;
@@ -78,14 +79,15 @@ class DocumentServiceTest {
   }
 
   /**
-   * Verifies that a StorageException thrown by the storage port propagates unchanged, without
-   * being wrapped or swallowed by the service.
+   * Verifies that a StorageException thrown by the storage port propagates unchanged, without being
+   * wrapped or swallowed by the service.
    */
   @Test
   @DisplayName("upload: storage failure — propagates StorageException")
   void upload_storageThrowsStorageException_propagates() {
     DocumentUpload upload = buildUpload();
-    when(storagePort.upload(upload)).thenThrow(new StorageException("upload failed", new RuntimeException()));
+    when(storagePort.upload(upload))
+        .thenThrow(new StorageException("upload failed", new RuntimeException()));
 
     assertThatThrownBy(() -> documentService.upload(upload))
         .isInstanceOf(StorageException.class)
@@ -116,7 +118,8 @@ class DocumentServiceTest {
   @Test
   @DisplayName("search: delegates to repository with correct criteria and pagination")
   void search_delegatesToRepository_returnsPagedResult() {
-    DocumentSearchCriteria criteria = new DocumentSearchCriteria("john.doe", "report", List.of("finance"));
+    DocumentSearchCriteria criteria =
+        new DocumentSearchCriteria("john.doe", "report", List.of("finance"));
     PagedResult<Document> expected = new PagedResult<>(List.of(buildDocument()), 0, 20, 1, 1L);
 
     when(documentRepository.findByCriteria(criteria, 0, 20)).thenReturn(expected);
@@ -163,10 +166,24 @@ class DocumentServiceTest {
   // --- helpers ---
 
   private DocumentUpload buildUpload() {
-    return new DocumentUpload("john.doe", "report.pdf", List.of("finance"), InputStream.nullInputStream(), 1024L, "application/pdf");
+    return new DocumentUpload(
+        "john.doe",
+        "report.pdf",
+        List.of("finance"),
+        InputStream.nullInputStream(),
+        1024L,
+        "application/pdf");
   }
 
   private Document buildDocument() {
-    return new Document(DOCUMENT_ID, "john.doe", "report.pdf", List.of("finance"), STORAGE_PATH, 1024L, "application/pdf", LocalDateTime.now());
+    return new Document(
+        DOCUMENT_ID,
+        "john.doe",
+        "report.pdf",
+        List.of("finance"),
+        STORAGE_PATH,
+        1024L,
+        "application/pdf",
+        LocalDateTime.now());
   }
 }

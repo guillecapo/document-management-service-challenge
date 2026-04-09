@@ -47,8 +47,8 @@ class MinioStorageAdapterTest {
   // ---------------------------------------------------------------------------
 
   /**
-   * A successful putObject call must return the storage path composed as "{user}/{filename}".
-   * This path is persisted in the database and used later to generate presigned download URLs.
+   * A successful putObject call must return the storage path composed as "{user}/{filename}". This
+   * path is persisted in the database and used later to generate presigned download URLs.
    */
   @Test
   @DisplayName("upload success returns storage path as user/filename")
@@ -94,8 +94,8 @@ class MinioStorageAdapterTest {
   }
 
   /**
-   * SocketException during upload also signals a connectivity failure. It is treated identically
-   * to ConnectException because both indicate the MinIO server is unreachable at the TCP level.
+   * SocketException during upload also signals a connectivity failure. It is treated identically to
+   * ConnectException because both indicate the MinIO server is unreachable at the TCP level.
    */
   @Test
   @DisplayName("upload with SocketException throws DependencyUnavailableException")
@@ -116,8 +116,33 @@ class MinioStorageAdapterTest {
   }
 
   /**
-   * A non-connectivity IOException during upload (e.g. malformed response from MinIO) is wrapped
-   * as StorageException, which maps to 500 rather than 503.
+   * When the SDK wraps a ConnectException inside an IOException (e.g. OkHttp wrapping a
+   * TCP-level failure), {@code e.getCause()} is non-null and is a ConnectException. The adapter
+   * must inspect the cause and still return DependencyUnavailableException, not StorageException.
+   */
+  @Test
+  @DisplayName("upload with IOException wrapping ConnectException throws DependencyUnavailableException")
+  void upload_iOExceptionWrappingConnectException_throwsDependencyUnavailableException()
+      throws Exception {
+    DocumentUpload upload =
+        new DocumentUpload(
+            "alice",
+            "contract.pdf",
+            List.of(),
+            new ByteArrayInputStream(new byte[0]),
+            0L,
+            "application/pdf");
+
+    when(minioClient.putObject(any()))
+        .thenThrow(new IOException("connection failed", new ConnectException("refused")));
+
+    assertThatThrownBy(() -> adapter.upload(upload))
+        .isInstanceOf(DependencyUnavailableException.class);
+  }
+
+  /**
+   * A non-connectivity IOException during upload (e.g. malformed response from MinIO) is wrapped as
+   * StorageException, which maps to 500 rather than 503.
    */
   @Test
   @DisplayName("upload with generic IOException throws StorageException")
@@ -141,8 +166,8 @@ class MinioStorageAdapterTest {
   // ---------------------------------------------------------------------------
 
   /**
-   * A successful getPresignedObjectUrl call must return the URL as-is. The adapter must not
-   * modify or re-encode the URL returned by the MinIO SDK.
+   * A successful getPresignedObjectUrl call must return the URL as-is. The adapter must not modify
+   * or re-encode the URL returned by the MinIO SDK.
    */
   @Test
   @DisplayName("generateDownloadUrl success returns presigned URL unchanged")
@@ -171,8 +196,8 @@ class MinioStorageAdapterTest {
   }
 
   /**
-   * A non-connectivity IOException during URL generation is wrapped as StorageException,
-   * which maps to 500 rather than 503.
+   * A non-connectivity IOException during URL generation is wrapped as StorageException, which maps
+   * to 500 rather than 503.
    */
   @Test
   @DisplayName("generateDownloadUrl with generic IOException throws StorageException")

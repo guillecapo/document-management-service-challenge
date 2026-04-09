@@ -26,15 +26,15 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockPart;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 /**
  * Verifies DocumentController's request mapping, input validation, and response serialization.
- * Uses @WebMvcTest to load only the web layer; use cases are mocked so no database or storage
- * is required. Exception-to-status mapping is covered separately in GlobalExceptionHandlerTest.
+ * Uses @WebMvcTest to load only the web layer; use cases are mocked so no database or storage is
+ * required. Exception-to-status mapping is covered separately in GlobalExceptionHandlerTest.
  */
 @WebMvcTest(DocumentController.class)
 class DocumentControllerTest {
@@ -51,8 +51,8 @@ class DocumentControllerTest {
   // ---------------------------------------------------------------------------
 
   /**
-   * A valid multipart request with metadata (user, name, tags) and a file part must be accepted
-   * and result in a 201. The controller must delegate to the upload use case exactly once.
+   * A valid multipart request with metadata (user, name, tags) and a file part must be accepted and
+   * result in a 201. The controller must delegate to the upload use case exactly once.
    */
   @Test
   @DisplayName("POST /upload with valid multipart returns 201")
@@ -60,12 +60,11 @@ class DocumentControllerTest {
     MockPart metadataPart =
         new MockPart(
             "metadata",
-            objectMapper
-                .writeValueAsBytes(Map.of("user", "alice", "name", "contract.pdf", "tags",
-                    List.of("legal"))));
+            objectMapper.writeValueAsBytes(
+                Map.of("user", "alice", "name", "contract.pdf", "tags", List.of("legal"))));
     metadataPart.getHeaders().setContentType(MediaType.APPLICATION_JSON);
 
-    MockPart filePart = new MockPart("file", "contract.pdf", new byte[]{1, 2, 3});
+    MockPart filePart = new MockPart("file", "contract.pdf", new byte[] {1, 2, 3});
     filePart.getHeaders().setContentType(MediaType.APPLICATION_PDF);
 
     mockMvc
@@ -85,12 +84,11 @@ class DocumentControllerTest {
     MockPart metadataPart =
         new MockPart(
             "metadata",
-            objectMapper
-                .writeValueAsBytes(Map.of("user", "", "name", "contract.pdf", "tags",
-                    List.of("legal"))));
+            objectMapper.writeValueAsBytes(
+                Map.of("user", "", "name", "contract.pdf", "tags", List.of("legal"))));
     metadataPart.getHeaders().setContentType(MediaType.APPLICATION_JSON);
 
-    MockPart filePart = new MockPart("file", "contract.pdf", new byte[]{1, 2, 3});
+    MockPart filePart = new MockPart("file", "contract.pdf", new byte[] {1, 2, 3});
     filePart.getHeaders().setContentType(MediaType.APPLICATION_PDF);
 
     mockMvc
@@ -98,21 +96,18 @@ class DocumentControllerTest {
         .andExpect(status().isBadRequest());
   }
 
-  /**
-   * Upload metadata with a blank name field must fail @NotBlank validation and return 400.
-   */
+  /** Upload metadata with a blank name field must fail @NotBlank validation and return 400. */
   @Test
   @DisplayName("POST /upload with blank name returns 400")
   void upload_blankName_returns400() throws Exception {
     MockPart metadataPart =
         new MockPart(
             "metadata",
-            objectMapper
-                .writeValueAsBytes(Map.of("user", "alice", "name", "", "tags",
-                    List.of("legal"))));
+            objectMapper.writeValueAsBytes(
+                Map.of("user", "alice", "name", "", "tags", List.of("legal"))));
     metadataPart.getHeaders().setContentType(MediaType.APPLICATION_JSON);
 
-    MockPart filePart = new MockPart("file", "contract.pdf", new byte[]{1, 2, 3});
+    MockPart filePart = new MockPart("file", "contract.pdf", new byte[] {1, 2, 3});
     filePart.getHeaders().setContentType(MediaType.APPLICATION_PDF);
 
     mockMvc
@@ -120,21 +115,18 @@ class DocumentControllerTest {
         .andExpect(status().isBadRequest());
   }
 
-  /**
-   * Upload metadata with an empty tags list must fail @NotEmpty validation and return 400.
-   */
+  /** Upload metadata with an empty tags list must fail @NotEmpty validation and return 400. */
   @Test
   @DisplayName("POST /upload with empty tags returns 400")
   void upload_emptyTags_returns400() throws Exception {
     MockPart metadataPart =
         new MockPart(
             "metadata",
-            objectMapper
-                .writeValueAsBytes(Map.of("user", "alice", "name", "contract.pdf", "tags",
-                    List.of())));
+            objectMapper.writeValueAsBytes(
+                Map.of("user", "alice", "name", "contract.pdf", "tags", List.of())));
     metadataPart.getHeaders().setContentType(MediaType.APPLICATION_JSON);
 
-    MockPart filePart = new MockPart("file", "contract.pdf", new byte[]{1, 2, 3});
+    MockPart filePart = new MockPart("file", "contract.pdf", new byte[] {1, 2, 3});
     filePart.getHeaders().setContentType(MediaType.APPLICATION_PDF);
 
     mockMvc
@@ -206,13 +198,12 @@ class DocumentControllerTest {
     DocumentSearchCriteria captured = captor.getValue();
     org.assertj.core.api.Assertions.assertThat(captured.user()).isEqualTo("alice");
     org.assertj.core.api.Assertions.assertThat(captured.name()).isEqualTo("contract");
-    org.assertj.core.api.Assertions.assertThat(captured.tags())
-        .containsExactly("legal", "finance");
+    org.assertj.core.api.Assertions.assertThat(captured.tags()).containsExactly("legal", "finance");
   }
 
   /**
-   * A negative page parameter violates the @Min(0) constraint on the controller method.
-   * The handler must return 400 without invoking the use case.
+   * A negative page parameter violates the @Min(0) constraint on the controller method. The handler
+   * must return 400 without invoking the use case.
    */
   @Test
   @DisplayName("POST /search with negative page returns 400")
@@ -237,8 +228,7 @@ class DocumentControllerTest {
   @Test
   @DisplayName("GET /download/{documentId} returns 200 with presigned URL")
   void download_existingDocument_returns200WithUrl() throws Exception {
-    String presignedUrl =
-        "http://localhost:9000/documents/alice/contract.pdf?X-Amz-Signature=abc";
+    String presignedUrl = "http://localhost:9000/documents/alice/contract.pdf?X-Amz-Signature=abc";
     when(downloadDocumentUseCase.generateDownloadUrl("01ARZ3NDEKTSV4RRFFQ69G5FAV"))
         .thenReturn(presignedUrl);
 

@@ -18,9 +18,9 @@ import org.springframework.context.annotation.Import;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.jdbc.Sql.ExecutionPhase;
-import org.testcontainers.postgresql.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.postgresql.PostgreSQLContainer;
 
 /**
  * Integration tests for DocumentPersistenceAdapter against a real PostgreSQL instance managed by
@@ -33,11 +33,12 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 @Import(DocumentPersistenceAdapter.class)
 @TestPropertySource(properties = "spring.jpa.hibernate.ddl-auto=none")
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
-@Sql(scripts = "file:docker/init-scripts/schema-init.sql", executionPhase = ExecutionPhase.BEFORE_TEST_CLASS)
+@Sql(
+    scripts = "file:docker/init-scripts/schema-init.sql",
+    executionPhase = ExecutionPhase.BEFORE_TEST_CLASS)
 class DocumentPersistenceAdapterIntegrationTest {
 
-  @Container
-  @ServiceConnection
+  @Container @ServiceConnection
   static PostgreSQLContainer postgres = new PostgreSQLContainer("postgres:15.4");
 
   @Autowired private DocumentPersistenceAdapter adapter;
@@ -49,15 +50,15 @@ class DocumentPersistenceAdapterIntegrationTest {
   // ---------------------------------------------------------------------------
 
   /**
-   * Saving a document and retrieving it by ID must return a domain object with all fields
-   * intact, including the tags list persisted via the @OneToMany relationship.
+   * Saving a document and retrieving it by ID must return a domain object with all fields intact,
+   * including the tags list persisted via the @OneToMany relationship.
    */
   @Test
   @DisplayName("save and findById returns document with all fields including tags")
   void save_and_findById_returnPersistedDocumentWithAllFields() {
     Document doc =
-        buildDocument("01JPMTEST00001", "alice", "contract.pdf", List.of("legal", "finance"),
-            BASE_TIME);
+        buildDocument(
+            "01JPMTEST00001", "alice", "contract.pdf", List.of("legal", "finance"), BASE_TIME);
 
     adapter.save(doc);
     Optional<Document> found = adapter.findById("01JPMTEST00001");
@@ -71,9 +72,7 @@ class DocumentPersistenceAdapterIntegrationTest {
     assertThat(found.get().fileType()).isEqualTo("application/pdf");
   }
 
-  /**
-   * Querying a non-existent ID must return an empty Optional without throwing an exception.
-   */
+  /** Querying a non-existent ID must return an empty Optional without throwing an exception. */
   @Test
   @DisplayName("findById with non-existent id returns empty Optional")
   void findById_nonExistentId_returnsEmpty() {
@@ -94,8 +93,8 @@ class DocumentPersistenceAdapterIntegrationTest {
   @DisplayName("findByCriteria with user filter returns only matching documents")
   void findByCriteria_byUser_returnsOnlyMatchingDocuments() {
     adapter.save(buildDocument("01JPMTEST00001", "alice", "doc1.pdf", List.of("legal"), BASE_TIME));
-    adapter.save(buildDocument("01JPMTEST00002", "bob", "doc2.pdf", List.of("hr"),
-        BASE_TIME.minusHours(1)));
+    adapter.save(
+        buildDocument("01JPMTEST00002", "bob", "doc2.pdf", List.of("hr"), BASE_TIME.minusHours(1)));
 
     PagedResult<Document> result =
         adapter.findByCriteria(new DocumentSearchCriteria("alice", null, null), 0, 20);
@@ -105,16 +104,18 @@ class DocumentPersistenceAdapterIntegrationTest {
   }
 
   /**
-   * The name filter uses case-insensitive LIKE matching. A partial substring must match
-   * documents whose name contains that substring regardless of case.
+   * The name filter uses case-insensitive LIKE matching. A partial substring must match documents
+   * whose name contains that substring regardless of case.
    */
   @Test
   @DisplayName("findByCriteria with partial name match returns matching documents")
   void findByCriteria_byPartialName_returnsMatchingDocuments() {
-    adapter.save(buildDocument("01JPMTEST00001", "alice", "annual-contract.pdf", List.of("legal"),
-        BASE_TIME));
-    adapter.save(buildDocument("01JPMTEST00002", "alice", "invoice.pdf", List.of("finance"),
-        BASE_TIME.minusHours(1)));
+    adapter.save(
+        buildDocument(
+            "01JPMTEST00001", "alice", "annual-contract.pdf", List.of("legal"), BASE_TIME));
+    adapter.save(
+        buildDocument(
+            "01JPMTEST00002", "alice", "invoice.pdf", List.of("finance"), BASE_TIME.minusHours(1)));
 
     PagedResult<Document> result =
         adapter.findByCriteria(new DocumentSearchCriteria(null, "CONTRACT", null), 0, 20);
@@ -124,19 +125,22 @@ class DocumentPersistenceAdapterIntegrationTest {
   }
 
   /**
-   * The tags filter uses OR logic: a document matching any of the requested tags is included.
-   * A document that has two of the requested tags must appear exactly once (distinct enforced).
+   * The tags filter uses OR logic: a document matching any of the requested tags is included. A
+   * document that has two of the requested tags must appear exactly once (distinct enforced).
    */
   @Test
   @DisplayName("findByCriteria with tags filter uses OR logic and deduplicates results")
   void findByCriteria_byTags_usesOrLogicAndDeduplicates() {
     // doc1 has both "legal" and "finance" — without DISTINCT it would appear twice
-    adapter.save(buildDocument("01JPMTEST00001", "alice", "doc1.pdf", List.of("legal", "finance"),
-        BASE_TIME));
-    adapter.save(buildDocument("01JPMTEST00002", "alice", "doc2.pdf", List.of("hr"),
-        BASE_TIME.minusHours(1)));
-    adapter.save(buildDocument("01JPMTEST00003", "alice", "doc3.pdf", List.of("ops"),
-        BASE_TIME.minusHours(2)));
+    adapter.save(
+        buildDocument(
+            "01JPMTEST00001", "alice", "doc1.pdf", List.of("legal", "finance"), BASE_TIME));
+    adapter.save(
+        buildDocument(
+            "01JPMTEST00002", "alice", "doc2.pdf", List.of("hr"), BASE_TIME.minusHours(1)));
+    adapter.save(
+        buildDocument(
+            "01JPMTEST00003", "alice", "doc3.pdf", List.of("ops"), BASE_TIME.minusHours(2)));
 
     PagedResult<Document> result =
         adapter.findByCriteria(
@@ -157,8 +161,9 @@ class DocumentPersistenceAdapterIntegrationTest {
   @Test
   @DisplayName("findByCriteria with no filters returns all documents ordered by createdAt DESC")
   void findByCriteria_noFilters_returnsAllOrderedByCreatedAtDesc() {
-    adapter.save(buildDocument("01JPMTEST00001", "alice", "older.pdf", List.of("legal"),
-        BASE_TIME.minusHours(2)));
+    adapter.save(
+        buildDocument(
+            "01JPMTEST00001", "alice", "older.pdf", List.of("legal"), BASE_TIME.minusHours(2)));
     adapter.save(buildDocument("01JPMTEST00002", "bob", "newer.pdf", List.of("hr"), BASE_TIME));
 
     PagedResult<Document> result =
@@ -170,8 +175,8 @@ class DocumentPersistenceAdapterIntegrationTest {
   }
 
   /**
-   * Pagination metadata (currentPage, itemsPerPage, totalItems, totalPages) must reflect the
-   * actual data and the requested page size.
+   * Pagination metadata (currentPage, itemsPerPage, totalItems, totalPages) must reflect the actual
+   * data and the requested page size.
    */
   @Test
   @DisplayName("findByCriteria pagination returns correct page metadata")
@@ -208,8 +213,8 @@ class DocumentPersistenceAdapterIntegrationTest {
   @DisplayName("findByCriteria with blank user treats it as no filter")
   void findByCriteria_blankUser_treatedAsNoFilter() {
     adapter.save(buildDocument("01JPMTEST00001", "alice", "doc1.pdf", List.of("legal"), BASE_TIME));
-    adapter.save(buildDocument("01JPMTEST00002", "bob", "doc2.pdf", List.of("hr"),
-        BASE_TIME.minusHours(1)));
+    adapter.save(
+        buildDocument("01JPMTEST00002", "bob", "doc2.pdf", List.of("hr"), BASE_TIME.minusHours(1)));
 
     PagedResult<Document> result =
         adapter.findByCriteria(new DocumentSearchCriteria("", null, null), 0, 20);
@@ -225,8 +230,9 @@ class DocumentPersistenceAdapterIntegrationTest {
   @DisplayName("findByCriteria with blank name treats it as no filter")
   void findByCriteria_blankName_treatedAsNoFilter() {
     adapter.save(buildDocument("01JPMTEST00001", "alice", "doc1.pdf", List.of("legal"), BASE_TIME));
-    adapter.save(buildDocument("01JPMTEST00002", "alice", "doc2.pdf", List.of("hr"),
-        BASE_TIME.minusHours(1)));
+    adapter.save(
+        buildDocument(
+            "01JPMTEST00002", "alice", "doc2.pdf", List.of("hr"), BASE_TIME.minusHours(1)));
 
     PagedResult<Document> result =
         adapter.findByCriteria(new DocumentSearchCriteria(null, "   ", null), 0, 20);
@@ -242,8 +248,9 @@ class DocumentPersistenceAdapterIntegrationTest {
   @DisplayName("findByCriteria with empty tags list treats it as no filter")
   void findByCriteria_emptyTags_treatedAsNoFilter() {
     adapter.save(buildDocument("01JPMTEST00001", "alice", "doc1.pdf", List.of("legal"), BASE_TIME));
-    adapter.save(buildDocument("01JPMTEST00002", "alice", "doc2.pdf", List.of("hr"),
-        BASE_TIME.minusHours(1)));
+    adapter.save(
+        buildDocument(
+            "01JPMTEST00002", "alice", "doc2.pdf", List.of("hr"), BASE_TIME.minusHours(1)));
 
     PagedResult<Document> result =
         adapter.findByCriteria(new DocumentSearchCriteria(null, null, List.of()), 0, 20);
@@ -257,7 +264,7 @@ class DocumentPersistenceAdapterIntegrationTest {
 
   private Document buildDocument(
       String id, String user, String name, List<String> tags, LocalDateTime createdAt) {
-    return new Document(id, user, name, tags, user + "/" + name, 1024L, "application/pdf",
-        createdAt);
+    return new Document(
+        id, user, name, tags, user + "/" + name, 1024L, "application/pdf", createdAt);
   }
 }
