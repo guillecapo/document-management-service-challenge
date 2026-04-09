@@ -1,2 +1,13 @@
-/mvnw text eol=lf
+# Normalize all text files to LF in the repository
+* text=auto eol=lf
+
+# Windows batch files keep CRLF
 *.cmd text eol=crlf
+*.bat text eol=crlf
+
+# Binary files — no line ending conversion
+*.pdf binary
+*.png binary
+*.jpg binary
+*.jar binary
+*.class binary

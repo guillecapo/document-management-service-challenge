@@ -158,6 +158,10 @@ Ensure that your solution includes the Dockerfile and database schema script, an
 
 If you have any additional notes, explanations, or assumptions regarding your implementation, feel free to include them in this section. This can help provide more context to reviewers.
 
+For a full description of the implementation — setup instructions, endpoints, test suite, memory constraint solution, and architecture decisions — see:
+
+**[SOLUTION.md](SOLUTION.md)**
+
 ---
 
 **⚠️ Important Note About the Challenge Completion ⚠️**
