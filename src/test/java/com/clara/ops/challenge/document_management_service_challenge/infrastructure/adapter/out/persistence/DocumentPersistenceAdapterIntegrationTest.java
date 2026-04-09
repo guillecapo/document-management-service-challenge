@@ -29,10 +29,10 @@ import org.testcontainers.junit.jupiter.Testcontainers;
  * automatically by @DataJpaTest, so tests are fully isolated.
  */
 @DataJpaTest
-@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @Testcontainers
 @Import(DocumentPersistenceAdapter.class)
 @TestPropertySource(properties = "spring.jpa.hibernate.ddl-auto=none")
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @Sql(scripts = "file:docker/init-scripts/schema-init.sql", executionPhase = ExecutionPhase.BEFORE_TEST_CLASS)
 class DocumentPersistenceAdapterIntegrationTest {
 
@@ -194,6 +194,61 @@ class DocumentPersistenceAdapterIntegrationTest {
     assertThat(result.totalItems()).isEqualTo(5);
     assertThat(result.totalPages()).isEqualTo(3);
     assertThat(result.items()).hasSize(2);
+  }
+
+  // ---------------------------------------------------------------------------
+  // DocumentSpecification — blank/empty field branches
+  // ---------------------------------------------------------------------------
+
+  /**
+   * A blank user string satisfies the null check but fails the isBlank check in
+   * DocumentSpecification, so it must be treated as no filter and return all documents.
+   */
+  @Test
+  @DisplayName("findByCriteria with blank user treats it as no filter")
+  void findByCriteria_blankUser_treatedAsNoFilter() {
+    adapter.save(buildDocument("01JPMTEST00001", "alice", "doc1.pdf", List.of("legal"), BASE_TIME));
+    adapter.save(buildDocument("01JPMTEST00002", "bob", "doc2.pdf", List.of("hr"),
+        BASE_TIME.minusHours(1)));
+
+    PagedResult<Document> result =
+        adapter.findByCriteria(new DocumentSearchCriteria("", null, null), 0, 20);
+
+    assertThat(result.totalItems()).isEqualTo(2);
+  }
+
+  /**
+   * A blank name string satisfies the null check but fails the isBlank check in
+   * DocumentSpecification, so it must be treated as no filter and return all documents.
+   */
+  @Test
+  @DisplayName("findByCriteria with blank name treats it as no filter")
+  void findByCriteria_blankName_treatedAsNoFilter() {
+    adapter.save(buildDocument("01JPMTEST00001", "alice", "doc1.pdf", List.of("legal"), BASE_TIME));
+    adapter.save(buildDocument("01JPMTEST00002", "alice", "doc2.pdf", List.of("hr"),
+        BASE_TIME.minusHours(1)));
+
+    PagedResult<Document> result =
+        adapter.findByCriteria(new DocumentSearchCriteria(null, "   ", null), 0, 20);
+
+    assertThat(result.totalItems()).isEqualTo(2);
+  }
+
+  /**
+   * An empty tags list satisfies the null check but fails the isEmpty check in
+   * DocumentSpecification, so it must be treated as no filter and return all documents.
+   */
+  @Test
+  @DisplayName("findByCriteria with empty tags list treats it as no filter")
+  void findByCriteria_emptyTags_treatedAsNoFilter() {
+    adapter.save(buildDocument("01JPMTEST00001", "alice", "doc1.pdf", List.of("legal"), BASE_TIME));
+    adapter.save(buildDocument("01JPMTEST00002", "alice", "doc2.pdf", List.of("hr"),
+        BASE_TIME.minusHours(1)));
+
+    PagedResult<Document> result =
+        adapter.findByCriteria(new DocumentSearchCriteria(null, null, List.of()), 0, 20);
+
+    assertThat(result.totalItems()).isEqualTo(2);
   }
 
   // ---------------------------------------------------------------------------
