@@ -28,7 +28,7 @@
 		<minio.version>8.4.3</minio.version>
 		<ulid-creator.version>5.2.3</ulid-creator.version>
 		<springdoc.version>2.7.0</springdoc.version>
-		<testcontainers.version>1.20.4</testcontainers.version>
+		<testcontainers.version>2.0.4</testcontainers.version>
 
 		<jvm.run.args>-Xmx50m -Xms32m -XX:+UseSerialGC -Xss256k</jvm.run.args>
 	</properties>
@@ -94,13 +94,18 @@
 			<scope>test</scope>
 		</dependency>
 		<dependency>
-			<groupId>org.testcontainers</groupId>
-			<artifactId>junit-jupiter</artifactId>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-testcontainers</artifactId>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.testcontainers</groupId>
-			<artifactId>postgresql</artifactId>
+			<artifactId>testcontainers-junit-jupiter</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.testcontainers</groupId>
+			<artifactId>testcontainers-postgresql</artifactId>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
