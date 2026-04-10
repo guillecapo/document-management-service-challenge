@@ -139,6 +139,7 @@ The file contains 16 ADRs covering every non-trivial choice made. Key highlights
 
 ## 7. Notes for the Reviewer
 
+- **Upload contract deviation**: the provided OpenAPI spec defines `/upload` with `content: application/json` and only the metadata fields (user, name, tags) — there is no file field. A binary PDF cannot be transmitted inside a JSON body. The implementation uses `multipart/form-data` with two parts: `metadata` (JSON, same schema as the spec) and `file` (binary). The response contract (201 / 400 / 422 / 503) is identical to the spec. See ADR-003 in `docs/decisions.md` for the full reasoning.
 - **Memory constraint**: the 50 MB limit applies to JVM heap (`-Xmx50m`). Metaspace is intentionally unconstrained — see ADR-013 for the reasoning.
 - **Coverage**: JaCoCo is configured as a `check` goal in `pom.xml`. The build fails if line or branch coverage drops below 95%. Running `./mvnw verify` enforces this automatically.
 - **Security**: error responses never expose internal technology names (ADR-012). Logs capture full details; clients receive generic messages.
