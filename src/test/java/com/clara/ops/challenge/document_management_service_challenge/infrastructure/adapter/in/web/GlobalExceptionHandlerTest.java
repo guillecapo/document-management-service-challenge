@@ -7,7 +7,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.clara.ops.challenge.document_management_service_challenge.domain.exception.DependencyUnavailableException;
 import com.clara.ops.challenge.document_management_service_challenge.domain.exception.DocumentNotFoundException;
 import com.clara.ops.challenge.document_management_service_challenge.domain.exception.StorageException;
+import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
+import jakarta.validation.Path;
 import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Set;
@@ -15,6 +17,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.MethodParameter;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -137,16 +140,16 @@ class GlobalExceptionHandlerTest {
   }
 
   /**
-   * A generic MultipartException (not caused by size) returns 400 including the exception message
-   * so the client understands what was malformed in the multipart request.
+   * A generic MultipartException (not caused by size) returns 400 with a fixed message to avoid
+   * leaking internal exception details (e.g. server paths, library versions) to the client.
    */
   @Test
-  @DisplayName("MultipartException returns 400 with exception message")
+  @DisplayName("MultipartException returns 400 with fixed message")
   void handleMultipart_returns400WithExceptionMessage() throws Exception {
     mockMvc
         .perform(get("/throw/multipart"))
         .andExpect(status().isBadRequest())
-        .andExpect(jsonPath("$.error").value("Invalid multipart request: bad multipart"));
+        .andExpect(jsonPath("$.error").value("Invalid file upload request."));
   }
 
   // ---------------------------------------------------------------------------
@@ -155,15 +158,15 @@ class GlobalExceptionHandlerTest {
 
   /**
    * HttpMediaTypeNotSupportedException occurs when the client sends a content type that the
-   * endpoint does not accept. The response includes the rejected content type for diagnostics.
+   * endpoint does not accept. A fixed message is returned to avoid leaking server configuration.
    */
   @Test
-  @DisplayName("HttpMediaTypeNotSupportedException returns 415 with content type in message")
+  @DisplayName("HttpMediaTypeNotSupportedException returns 415 with fixed message")
   void handleMediaType_returns415WithContentType() throws Exception {
     mockMvc
         .perform(get("/throw/media-type"))
         .andExpect(status().isUnsupportedMediaType())
-        .andExpect(jsonPath("$.error").value("Unsupported media type: text/plain"));
+        .andExpect(jsonPath("$.error").value("Unsupported media type."));
   }
 
   /**
@@ -290,7 +293,12 @@ class GlobalExceptionHandlerTest {
 
     @GetMapping("/throw/constraint-violation")
     void throwConstraintViolation() {
-      throw new ConstraintViolationException("name: must not be blank", Set.of());
+      Path path = Mockito.mock(Path.class);
+      Mockito.when(path.toString()).thenReturn("name");
+      ConstraintViolation<?> violation = Mockito.mock(ConstraintViolation.class);
+      Mockito.when(violation.getPropertyPath()).thenReturn(path);
+      Mockito.when(violation.getMessage()).thenReturn("must not be blank");
+      throw new ConstraintViolationException("name: must not be blank", Set.of(violation));
     }
 
     @GetMapping("/throw/generic")

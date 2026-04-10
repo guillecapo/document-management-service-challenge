@@ -59,13 +59,13 @@ public class GlobalExceptionHandler {
   @ExceptionHandler(MultipartException.class)
   @ResponseStatus(HttpStatus.BAD_REQUEST)
   public Map<String, String> handleMultipart(MultipartException ex) {
-    return Map.of("error", "Invalid multipart request: " + ex.getMessage());
+    return Map.of("error", "Invalid file upload request.");
   }
 
   @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
   @ResponseStatus(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
   public Map<String, String> handleMediaType(HttpMediaTypeNotSupportedException ex) {
-    return Map.of("error", "Unsupported media type: " + ex.getContentType());
+    return Map.of("error", "Unsupported media type.");
   }
 
   @ExceptionHandler(NoResourceFoundException.class)
@@ -88,7 +88,12 @@ public class GlobalExceptionHandler {
   @ExceptionHandler(ConstraintViolationException.class)
   @ResponseStatus(HttpStatus.BAD_REQUEST)
   public Map<String, String> handleConstraintViolation(ConstraintViolationException ex) {
-    return Map.of("error", ex.getMessage());
+    String message =
+        ex.getConstraintViolations().stream()
+            .map(cv -> cv.getPropertyPath() + ": " + cv.getMessage())
+            .findFirst()
+            .orElse("Invalid request");
+    return Map.of("error", message);
   }
 
   @ExceptionHandler(Exception.class)

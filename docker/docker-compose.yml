@@ -20,7 +20,7 @@ services:
       start_period: 10s
 
   minio:
-    image: minio/minio:latest
+    image: minio/minio:RELEASE.2025-02-07T23-21-09Z
     container_name: minio
     restart: always
     ports:

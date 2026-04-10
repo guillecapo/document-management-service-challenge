@@ -11,6 +11,7 @@ import io.minio.MinioClient;
 import io.minio.PutObjectArgs;
 import java.net.ConnectException;
 import java.net.SocketException;
+import java.nio.file.Paths;
 import java.util.concurrent.TimeUnit;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
@@ -33,7 +34,9 @@ public class MinioStorageAdapter implements StoragePort {
 
   @Override
   public String upload(DocumentUpload upload) {
-    String storagePath = upload.user() + "/" + upload.name();
+    // Strip any path components to prevent path traversal attacks.
+    String filename = Paths.get(upload.name()).getFileName().toString();
+    String storagePath = upload.user() + "/" + filename;
     try {
       minioClient.putObject(
           PutObjectArgs.builder().bucket(properties.bucketName()).object(storagePath).stream(
