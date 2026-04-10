@@ -35,3 +35,6 @@ build/
 ### Local environment credentials ###
 .env
 docker/.env
+
+### Repomix output ###
+repomix-output.xml

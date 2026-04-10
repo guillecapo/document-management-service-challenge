@@ -12,7 +12,6 @@ CREATE TABLE document_schema.documents (
 );
 
 CREATE INDEX idx_documents_user_id  ON document_schema.documents (user_id);
-CREATE INDEX idx_documents_name     ON document_schema.documents (name);
 CREATE INDEX idx_documents_created_at ON document_schema.documents (created_at DESC);
 
 CREATE TABLE document_schema.document_tags (
