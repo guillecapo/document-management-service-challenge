@@ -137,7 +137,30 @@ The file contains 16 ADRs covering every non-trivial choice made. Key highlights
 
 ---
 
-## 7. Notes for the Reviewer
+## 7. Known Limitations and Technical Debt
+
+The following limitations are acknowledged and accepted within the scope of this challenge.
+
+- **Orphaned files on persistence failure**: the upload flow writes to MinIO first, then persists
+  metadata to PostgreSQL. If the database insert fails after a successful MinIO write (e.g. a
+  constraint violation or a transient connection error), the stored file has no corresponding
+  record and becomes unreachable. A production system would address this with a saga/outbox
+  pattern, a scheduled reconciliation job, or a two-phase commit approach. For this challenge
+  the window is narrow and the trade-off is explicitly accepted.
+
+- **Upload response does not return the document ID**: the `POST /upload` endpoint returns HTTP
+  201 with no body. The generated document ID (ULID) is not surfaced to the caller, requiring a
+  subsequent search by name or user to retrieve the created resource. The challenge specification
+  does not define a response body for this endpoint, so the current behavior matches the spec.
+  A REST-idiomatic implementation would include the document ID in the response body or in a
+  `Location` header.
+
+- **Pagination is 0-based**: the `page` parameter in `POST /search` follows Spring Data's
+  default 0-based indexing (page 0 is the first page). This is not explicitly documented in the
+  OpenAPI spec or in the endpoint description. Callers who assume 1-based indexing will receive
+  an unexpected first page.
+
+## 8. Notes for the Reviewer
 
 - **Upload contract deviation**: the provided OpenAPI spec defines `/upload` with `content: application/json` and only the metadata fields (user, name, tags) — there is no file field. A binary PDF cannot be transmitted inside a JSON body. The implementation uses `multipart/form-data` with two parts: `metadata` (JSON, same schema as the spec) and `file` (binary). The response contract (201 / 400 / 422 / 503) is identical to the spec. See ADR-003 in `docs/decisions.md` for the full reasoning.
 - **Memory constraint**: the 50 MB limit applies to JVM heap (`-Xmx50m`). Metaspace is intentionally unconstrained — see ADR-013 for the reasoning.
