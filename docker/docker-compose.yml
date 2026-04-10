@@ -38,6 +38,8 @@ services:
       timeout: 5s
       retries: 5
       start_period: 10s
+    networks:
+      - batch_network
 
   document-management-service:
     build:
