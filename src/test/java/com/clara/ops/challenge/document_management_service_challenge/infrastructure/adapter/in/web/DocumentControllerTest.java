@@ -18,6 +18,8 @@ import com.clara.ops.challenge.document_management_service_challenge.domain.port
 import com.clara.ops.challenge.document_management_service_challenge.domain.port.in.SearchDocumentsUseCase;
 import com.clara.ops.challenge.document_management_service_challenge.domain.port.in.UploadDocumentUseCase;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -25,7 +27,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockPart;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -40,7 +42,11 @@ import org.springframework.test.web.servlet.MockMvc;
 class DocumentControllerTest {
 
   @Autowired private MockMvc mockMvc;
-  @Autowired private ObjectMapper objectMapper;
+
+  private final ObjectMapper objectMapper =
+      new ObjectMapper()
+          .registerModule(new JavaTimeModule())
+          .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
 
   @MockitoBean private UploadDocumentUseCase uploadDocumentUseCase;
   @MockitoBean private SearchDocumentsUseCase searchDocumentsUseCase;

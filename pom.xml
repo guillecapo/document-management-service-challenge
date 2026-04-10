@@ -5,7 +5,7 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>3.4.5</version>
+		<version>4.0.5</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.clara.ops.challenge</groupId>
@@ -25,11 +25,13 @@
 		<spotless.maven.plugin.version>2.43.0</spotless.maven.plugin.version>
 		<googleJavaFormat.version>1.22.0</googleJavaFormat.version>
 
-		<minio.version>8.4.3</minio.version>
+		<minio.version>9.0.0</minio.version>
 		<ulid-creator.version>5.2.3</ulid-creator.version>
 		<springdoc.version>2.7.0</springdoc.version>
 		<testcontainers.version>2.0.4</testcontainers.version>
-
+		<postgresql.version>42.7.6</postgresql.version>
+        <webmvc-test.version>4.0.5</webmvc-test.version>
+        <starter-test.version>4.0.5</starter-test.version>
 		<jvm.run.args>-Xmx50m -Xms32m -XX:+UseSerialGC -Xss256k</jvm.run.args>
 	</properties>
 	<dependencyManagement>
@@ -63,11 +65,11 @@
 			<artifactId>minio</artifactId>
 			<version>${minio.version}</version>
 		</dependency>
-        <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-compress</artifactId>
-            <version>1.27.1</version>
-        </dependency>
+		<dependency>
+			<groupId>com.squareup.okhttp3</groupId>
+			<artifactId>okhttp</artifactId>
+			<version>4.12.0</version>
+		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-devtools</artifactId>
@@ -96,6 +98,7 @@
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-test</artifactId>
+            <version>${starter-test.version}</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
@@ -113,6 +116,17 @@
 			<artifactId>testcontainers-postgresql</artifactId>
 			<scope>test</scope>
 		</dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-webmvc-test</artifactId>
+            <version>${webmvc-test.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-jpa-test</artifactId>
+            <scope>test</scope>
+        </dependency>
 	</dependencies>
 
 	<build>

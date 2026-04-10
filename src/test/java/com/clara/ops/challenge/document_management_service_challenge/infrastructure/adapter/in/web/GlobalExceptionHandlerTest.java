@@ -131,7 +131,7 @@ class GlobalExceptionHandlerTest {
   void handleMaxUploadSize_returns422WithFixedMessage() throws Exception {
     mockMvc
         .perform(get("/throw/max-upload-size"))
-        .andExpect(status().isUnprocessableEntity())
+        .andExpect(status().is(422))
         .andExpect(
             jsonPath("$.error").value("File size exceeds the maximum allowed limit of 500MB."));
   }
@@ -276,7 +276,7 @@ class GlobalExceptionHandlerTest {
 
     @GetMapping("/throw/no-resource")
     void throwNoResource() throws NoResourceFoundException {
-      throw new NoResourceFoundException(HttpMethod.GET, "/unknown/path");
+      throw new NoResourceFoundException(HttpMethod.GET, "No resource found", "/unknown/path");
     }
 
     @GetMapping("/throw/method-arg-not-valid")

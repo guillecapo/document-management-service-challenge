@@ -6,9 +6,9 @@ import com.clara.ops.challenge.document_management_service_challenge.domain.mode
 import com.clara.ops.challenge.document_management_service_challenge.domain.port.out.StoragePort;
 import com.clara.ops.challenge.document_management_service_challenge.infrastructure.config.MinioProperties;
 import io.minio.GetPresignedObjectUrlArgs;
+import io.minio.Http.Method;
 import io.minio.MinioClient;
 import io.minio.PutObjectArgs;
-import io.minio.http.Method;
 import java.net.ConnectException;
 import java.net.SocketException;
 import java.util.concurrent.TimeUnit;
@@ -28,7 +28,7 @@ public class MinioStorageAdapter implements StoragePort {
     try {
       minioClient.putObject(
           PutObjectArgs.builder().bucket(properties.bucketName()).object(storagePath).stream(
-                  upload.fileStream(), upload.fileSize(), -1)
+                  upload.fileStream(), upload.fileSize(), -1L)
               .contentType(upload.fileType())
               .build());
       return storagePath;

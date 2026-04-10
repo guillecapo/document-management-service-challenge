@@ -3,6 +3,7 @@ package com.clara.ops.challenge.document_management_service_challenge.infrastruc
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.when;
 
 import com.clara.ops.challenge.document_management_service_challenge.domain.exception.DependencyUnavailableException;
@@ -87,7 +88,12 @@ class MinioStorageAdapterTest {
 
     // ConnectException extends IOException, which is declared in putObject's throws clause.
     // The adapter uses e itself as the cause when e.getCause() is null, so instanceof check works.
-    when(minioClient.putObject(any())).thenThrow(new ConnectException("refused"));
+    doAnswer(
+            inv -> {
+              throw new ConnectException("refused");
+            })
+        .when(minioClient)
+        .putObject(any());
 
     assertThatThrownBy(() -> adapter.upload(upload))
         .isInstanceOf(DependencyUnavailableException.class);
@@ -109,19 +115,25 @@ class MinioStorageAdapterTest {
             0L,
             "application/pdf");
 
-    when(minioClient.putObject(any())).thenThrow(new SocketException("reset"));
+    doAnswer(
+            inv -> {
+              throw new SocketException("reset");
+            })
+        .when(minioClient)
+        .putObject(any());
 
     assertThatThrownBy(() -> adapter.upload(upload))
         .isInstanceOf(DependencyUnavailableException.class);
   }
 
   /**
-   * When the SDK wraps a ConnectException inside an IOException (e.g. OkHttp wrapping a
-   * TCP-level failure), {@code e.getCause()} is non-null and is a ConnectException. The adapter
-   * must inspect the cause and still return DependencyUnavailableException, not StorageException.
+   * When the SDK wraps a ConnectException inside an IOException (e.g. OkHttp wrapping a TCP-level
+   * failure), {@code e.getCause()} is non-null and is a ConnectException. The adapter must inspect
+   * the cause and still return DependencyUnavailableException, not StorageException.
    */
   @Test
-  @DisplayName("upload with IOException wrapping ConnectException throws DependencyUnavailableException")
+  @DisplayName(
+      "upload with IOException wrapping ConnectException throws DependencyUnavailableException")
   void upload_iOExceptionWrappingConnectException_throwsDependencyUnavailableException()
       throws Exception {
     DocumentUpload upload =
@@ -133,8 +145,12 @@ class MinioStorageAdapterTest {
             0L,
             "application/pdf");
 
-    when(minioClient.putObject(any()))
-        .thenThrow(new IOException("connection failed", new ConnectException("refused")));
+    doAnswer(
+            inv -> {
+              throw new IOException("connection failed", new ConnectException("refused"));
+            })
+        .when(minioClient)
+        .putObject(any());
 
     assertThatThrownBy(() -> adapter.upload(upload))
         .isInstanceOf(DependencyUnavailableException.class);
@@ -156,7 +172,12 @@ class MinioStorageAdapterTest {
             0L,
             "application/pdf");
 
-    when(minioClient.putObject(any())).thenThrow(new IOException("unexpected minio error"));
+    doAnswer(
+            inv -> {
+              throw new IOException("unexpected minio error");
+            })
+        .when(minioClient)
+        .putObject(any());
 
     assertThatThrownBy(() -> adapter.upload(upload)).isInstanceOf(StorageException.class);
   }
@@ -189,7 +210,12 @@ class MinioStorageAdapterTest {
   @DisplayName("generateDownloadUrl with ConnectException throws DependencyUnavailableException")
   void generateDownloadUrl_connectException_throwsDependencyUnavailableException()
       throws Exception {
-    when(minioClient.getPresignedObjectUrl(any())).thenThrow(new ConnectException("refused"));
+    doAnswer(
+            inv -> {
+              throw new ConnectException("refused");
+            })
+        .when(minioClient)
+        .getPresignedObjectUrl(any());
 
     assertThatThrownBy(() -> adapter.generateDownloadUrl("alice/contract.pdf"))
         .isInstanceOf(DependencyUnavailableException.class);
@@ -202,7 +228,12 @@ class MinioStorageAdapterTest {
   @Test
   @DisplayName("generateDownloadUrl with generic IOException throws StorageException")
   void generateDownloadUrl_genericException_throwsStorageException() throws Exception {
-    when(minioClient.getPresignedObjectUrl(any())).thenThrow(new IOException("minio error"));
+    doAnswer(
+            inv -> {
+              throw new IOException("minio error");
+            })
+        .when(minioClient)
+        .getPresignedObjectUrl(any());
 
     assertThatThrownBy(() -> adapter.generateDownloadUrl("alice/contract.pdf"))
         .isInstanceOf(StorageException.class);

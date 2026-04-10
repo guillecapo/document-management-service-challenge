@@ -6,15 +6,15 @@ This document describes the implementation decisions, setup instructions, and te
 
 ## 1. Stack and Architecture
 
-| Layer | Technology |
-|---|---|
-| Runtime | Java 17, Spring Boot 3.4.5 |
-| Storage | MinIO (S3-compatible) via MinIO SDK 8.4.3 |
-| Database | PostgreSQL 15.4 + Spring Data JPA |
-| IDs | ULID (ulid-creator 5.2.3) — sortable by creation time |
-| Testing | JUnit 5, Mockito, AssertJ, Testcontainers |
-| Coverage | JaCoCo 0.8.11 — 95% line and branch threshold enforced |
-| Code style | Spotless (Google Java Format) |
+|   Layer    |                       Technology                       |
+|------------|--------------------------------------------------------|
+| Runtime    | Java 17, Spring Boot 4.0.5                             |
+| Storage    | MinIO (S3-compatible) via MinIO SDK 8.6.0              |
+| Database   | PostgreSQL 15.4 + Spring Data JPA                      |
+| IDs        | ULID (ulid-creator 5.2.3) — sortable by creation time  |
+| Testing    | JUnit 5, Mockito, AssertJ, Testcontainers              |
+| Coverage   | JaCoCo 0.8.11 — 95% line and branch threshold enforced |
+| Code style | Spotless (Google Java Format)                          |
 
 The service follows **Hexagonal Architecture (Ports and Adapters)**:
 
@@ -65,11 +65,11 @@ Once the stack is running, the full interactive API documentation is available a
 
 **Swagger UI:** `http://localhost:8080/swagger-ui.html`
 
-| Method | Path | Description |
-|---|---|---|
-| `POST` | `/document-management/upload` | Upload a PDF with metadata (multipart/form-data) |
-| `POST` | `/document-management/search` | Search documents with optional filters and pagination |
-| `GET` | `/document-management/download/{documentId}` | Get a temporary download URL for a document |
+| Method |                     Path                     |                      Description                      |
+|--------|----------------------------------------------|-------------------------------------------------------|
+| `POST` | `/document-management/upload`                | Upload a PDF with metadata (multipart/form-data)      |
+| `POST` | `/document-management/search`                | Search documents with optional filters and pagination |
+| `GET`  | `/document-management/download/{documentId}` | Get a temporary download URL for a document           |
 
 A Postman collection with pre-configured requests is available at `scripts/document-management.postman_collection.json`. Set the `baseUrl` variable to `http://localhost:8080`.
 
@@ -84,14 +84,14 @@ A Postman collection with pre-configured requests is available at `scripts/docum
 
 The test suite includes:
 
-| Test class | Type | What it covers |
-|---|---|---|
-| `DocumentServiceTest` | Unit | Application layer use cases |
-| `GlobalExceptionHandlerTest` | Unit | HTTP error mappings (400, 404, 413, 415, 503) |
-| `MinioStorageAdapterTest` | Unit | MinIO adapter paths and error handling |
-| `DocumentControllerTest` | Unit (MockMvc) | Controller request/response mapping |
-| `DocumentPersistenceAdapterIntegrationTest` | Integration (Testcontainers) | JPA queries against a real PostgreSQL instance |
-| `ConcurrentUploadIntegrationTest` | Integration (Testcontainers) | 10 concurrent uploads of 60 MB each under -Xmx50m |
+|                 Test class                  |             Type             |                  What it covers                   |
+|---------------------------------------------|------------------------------|---------------------------------------------------|
+| `DocumentServiceTest`                       | Unit                         | Application layer use cases                       |
+| `GlobalExceptionHandlerTest`                | Unit                         | HTTP error mappings (400, 404, 413, 415, 503)     |
+| `MinioStorageAdapterTest`                   | Unit                         | MinIO adapter paths and error handling            |
+| `DocumentControllerTest`                    | Unit (MockMvc)               | Controller request/response mapping               |
+| `DocumentPersistenceAdapterIntegrationTest` | Integration (Testcontainers) | JPA queries against a real PostgreSQL instance    |
+| `ConcurrentUploadIntegrationTest`           | Integration (Testcontainers) | 10 concurrent uploads of 60 MB each under -Xmx50m |
 
 #### Coverage report
 
@@ -112,7 +112,7 @@ The challenge requires the service to handle uploads of up to 500 MB under a 50 
 1. Spring's multipart configuration writes incoming file bytes to `/tmp` (disk), never to heap.
 2. The `InputStream` from the temp file is passed directly to MinIO's `PutObjectArgs` — no in-memory buffering.
 3. `spring.main.lazy-initialization=true` reduces heap pressure at startup.
-4. `-Xmx50m` is enforced; the Docker container limit is `256M` to allow Metaspace (~120 MB required by Spring Boot 3.x class loading).
+4. `-Xmx50m` is enforced; the Docker container limit is `256M` to allow Metaspace (~120 MB required by Spring Boot 4.x class loading).
 
 **Validated by** `ConcurrentUploadIntegrationTest`: 10 threads uploading 60 MB files simultaneously against real MinIO and PostgreSQL containers, with heap metrics logged per thread. All uploads complete successfully without `OutOfMemoryError`.
 
@@ -128,12 +128,12 @@ All decisions made during implementation are documented as Architecture Decision
 
 The file contains 16 ADRs covering every non-trivial choice made. Key highlights:
 
-| ADR | Decision | Why it matters |
-|---|---|---|
-| ADR-003 | `multipart/form-data` for upload | The provided spec showed no file field — binary uploads require multipart, not JSON |
-| ADR-004 | Streaming to MinIO via `InputStream` | Only way to stay under the 50 MB heap limit with 500 MB files |
-| ADR-013 | `-Xmx50m` heap only, no `MaxMetaspaceSize` | Spring Boot 3.x needs ~120 MB Metaspace; the constraint targets heap buffering, not class loading |
-| ADR-012 | Technology names not exposed in error responses | Exposing PostgreSQL/MinIO names in HTTP responses is an information disclosure vulnerability |
+|   ADR   |                    Decision                     |                                          Why it matters                                           |
+|---------|-------------------------------------------------|---------------------------------------------------------------------------------------------------|
+| ADR-003 | `multipart/form-data` for upload                | The provided spec showed no file field — binary uploads require multipart, not JSON               |
+| ADR-004 | Streaming to MinIO via `InputStream`            | Only way to stay under the 50 MB heap limit with 500 MB files                                     |
+| ADR-013 | `-Xmx50m` heap only, no `MaxMetaspaceSize`      | Spring Boot 4.x needs ~120 MB Metaspace; the constraint targets heap buffering, not class loading |
+| ADR-012 | Technology names not exposed in error responses | Exposing PostgreSQL/MinIO names in HTTP responses is an information disclosure vulnerability      |
 
 ---
 
@@ -145,3 +145,4 @@ The file contains 16 ADRs covering every non-trivial choice made. Key highlights
 - **Tag filtering**: uses OR semantics — a document matching any of the provided tags is returned (ADR-007).
 - **Name search**: case-insensitive substring match (`LIKE %term%`) — ADR-008 discusses the trade-offs vs. full-text search.
 - **OpenAPI docs**: all three endpoints are fully annotated with `@Operation`, `@ApiResponses`, and `@Parameter` — visible in Swagger UI.
+
