@@ -33,14 +33,22 @@ import org.mockito.junit.jupiter.MockitoExtension;
 class MinioStorageAdapterTest {
 
   @Mock private MinioClient minioClient;
+  @Mock private MinioClient presignedMinioClient;
 
   private MinioStorageAdapter adapter;
 
   @BeforeEach
   void setUp() {
     MinioProperties properties =
-        new MinioProperties("http://localhost:9000", "key", "secret", "documents", 60);
-    adapter = new MinioStorageAdapter(minioClient, properties);
+        new MinioProperties(
+            "http://minio:9000",
+            "http://localhost:9000",
+            "us-east-1",
+            "key",
+            "secret",
+            "documents",
+            60);
+    adapter = new MinioStorageAdapter(minioClient, presignedMinioClient, properties);
   }
 
   // ---------------------------------------------------------------------------
@@ -187,15 +195,15 @@ class MinioStorageAdapterTest {
   // ---------------------------------------------------------------------------
 
   /**
-   * A successful getPresignedObjectUrl call must return the URL as-is. The adapter must not modify
-   * or re-encode the URL returned by the MinIO SDK.
+   * A successful getPresignedObjectUrl call must return the URL as-is. The presignedMinioClient is
+   * configured with the public endpoint, so the URL it generates is already externally accessible.
    */
   @Test
   @DisplayName("generateDownloadUrl success returns presigned URL unchanged")
   void generateDownloadUrl_success_returnsPresignedUrl() throws Exception {
     String expectedUrl = "http://localhost:9000/documents/alice/contract.pdf?X-Amz-Signature=abc";
 
-    when(minioClient.getPresignedObjectUrl(any())).thenReturn(expectedUrl);
+    when(presignedMinioClient.getPresignedObjectUrl(any())).thenReturn(expectedUrl);
 
     String url = adapter.generateDownloadUrl("alice/contract.pdf");
 
@@ -214,7 +222,7 @@ class MinioStorageAdapterTest {
             inv -> {
               throw new ConnectException("refused");
             })
-        .when(minioClient)
+        .when(presignedMinioClient)
         .getPresignedObjectUrl(any());
 
     assertThatThrownBy(() -> adapter.generateDownloadUrl("alice/contract.pdf"))
@@ -232,7 +240,7 @@ class MinioStorageAdapterTest {
             inv -> {
               throw new IOException("minio error");
             })
-        .when(minioClient)
+        .when(presignedMinioClient)
         .getPresignedObjectUrl(any());
 
     assertThatThrownBy(() -> adapter.generateDownloadUrl("alice/contract.pdf"))

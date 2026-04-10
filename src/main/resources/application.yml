@@ -27,10 +27,17 @@ spring:
 
 minio:
   endpoint: ${MINIO_ENDPOINT:http://localhost:9000}
+  public-endpoint: ${MINIO_PUBLIC_ENDPOINT:${minio.endpoint}}
+  region: ${MINIO_REGION:us-east-1}
   access-key: ${MINIO_ACCESS_KEY:minioadmin}
   secret-key: ${MINIO_SECRET_KEY:minioadmin}
   bucket-name: ${MINIO_BUCKET_NAME:document-bucket}
   presigned-url-expiry-minutes: ${MINIO_PRESIGNED_URL_EXPIRY_MINUTES:60}
+
+logging:
+  level:
+    org.hibernate.orm.connections: WARN
+    org.hibernate.engine.jdbc.connections: WARN
 
 springdoc:
   api-docs:

@@ -12,15 +12,24 @@ import io.minio.PutObjectArgs;
 import java.net.ConnectException;
 import java.net.SocketException;
 import java.util.concurrent.TimeUnit;
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
 @Component
-@RequiredArgsConstructor
 public class MinioStorageAdapter implements StoragePort {
 
   private final MinioClient minioClient;
+  private final MinioClient presignedMinioClient;
   private final MinioProperties properties;
+
+  public MinioStorageAdapter(
+      MinioClient minioClient,
+      @Qualifier("presignedMinioClient") MinioClient presignedMinioClient,
+      MinioProperties properties) {
+    this.minioClient = minioClient;
+    this.presignedMinioClient = presignedMinioClient;
+    this.properties = properties;
+  }
 
   @Override
   public String upload(DocumentUpload upload) {
@@ -40,11 +49,16 @@ public class MinioStorageAdapter implements StoragePort {
   @Override
   public String generateDownloadUrl(String storagePath) {
     try {
-      return minioClient.getPresignedObjectUrl(
+      // Explicit region bypasses the SDK's region-detection HTTP call, allowing
+      // presignedMinioClient (configured with the public endpoint) to generate
+      // the URL without needing network access to the public endpoint from inside
+      // the container.
+      return presignedMinioClient.getPresignedObjectUrl(
           GetPresignedObjectUrlArgs.builder()
               .method(Method.GET)
               .bucket(properties.bucketName())
               .object(storagePath)
+              .region(properties.region())
               .expiry(properties.presignedUrlExpiryMinutes(), TimeUnit.MINUTES)
               .build());
     } catch (Exception e) {

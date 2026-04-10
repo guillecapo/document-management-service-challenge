@@ -16,4 +16,12 @@ public class MinioConfig {
         .credentials(properties.accessKey(), properties.secretKey())
         .build();
   }
+
+  @Bean
+  public MinioClient presignedMinioClient(MinioProperties properties) {
+    return MinioClient.builder()
+        .endpoint(properties.publicEndpoint())
+        .credentials(properties.accessKey(), properties.secretKey())
+        .build();
+  }
 }
